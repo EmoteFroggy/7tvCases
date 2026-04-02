@@ -18,6 +18,7 @@ const els = {
   modalKv: document.getElementById("modalKv"),
   modalConfirmBtn: document.getElementById("modalConfirmBtn"),
   modalSellBtn: document.getElementById("modalSellBtn"),
+  sellAllBtn: document.getElementById("sellAllBtn"),
   usernameInput: document.getElementById("usernameInput"),
   usernameToggle: document.getElementById("usernameToggle"),
   rarityFilter: document.getElementById("rarityFilter"),
@@ -25,6 +26,25 @@ const els = {
   paintCaseTitle: document.getElementById("paintCaseTitle"),
   badgeCaseTitle: document.getElementById("badgeCaseTitle"),
 };
+
+const sounds = {
+  tick: new Audio("https://raw.githubusercontent.com/msakarvadia/Clock/master/Tick.mp3"),
+  win_blue: new Audio("https://github.com/sourcesounds/csgo/raw/refs/heads/master/sound/ui/panorama/case_awarded_0_common_01.wav"),
+  win_purple: new Audio("https://github.com/sourcesounds/csgo/raw/refs/heads/master/sound/ui/panorama/case_awarded_1_uncommon_01.wav"),
+  win_pink: new Audio("https://github.com/sourcesounds/csgo/raw/refs/heads/master/sound/ui/panorama/case_awarded_2_rare_01.wav"),
+  win_red: new Audio("https://github.com/sourcesounds/csgo/raw/refs/heads/master/sound/ui/panorama/case_awarded_4_legendary_01.wav"),
+  win_gold: new Audio("https://github.com/sourcesounds/csgo/raw/refs/heads/master/sound/ui/panorama/case_awarded_5_ancient_01.wav"),
+  sell: new Audio("https://raw.githubusercontent.com/clairefro/blockify/master/cash_register.mp3"),
+};
+
+function playSound(name) {
+  if (app.muted) return;
+  const s = sounds[name];
+  if (!s) return;
+  s.currentTime = 0;
+  s.volume = 0.5; // Reduce default volume slightly
+  s.play().catch(() => {});
+}
 
 function loadCachedCosmetics() {
   try {
@@ -100,6 +120,7 @@ const app = {
   rolling: false,
   username: "",
   customNameToggle: false,
+  muted: localStorage.getItem("stv_case_muted_v1") === "true",
 };
 
 const RARITY_BASE_PRICE = {
@@ -156,6 +177,7 @@ function saveInventory() {
     };
     localStorage.setItem("stv_case_inventory_v1", JSON.stringify(toSave));
     localStorage.setItem("stv_case_wallet_v1", app.wallet.toString());
+    localStorage.setItem("stv_case_muted_v1", app.muted.toString());
   } catch {
     // ignore
   }
@@ -164,12 +186,22 @@ function saveInventory() {
 }
 
 function sellItem(obtainedAt) {
-  const inv = app.inventory[app.selectedInventoryTab];
-  const idx = inv.findIndex(it => it.obtainedAt === obtainedAt);
+  // Search both inventory arrays for the item
+  let type = "paints";
+  let idx = app.inventory.paints.findIndex(it => it.obtainedAt === obtainedAt);
+  
+  if (idx === -1) {
+    type = "badges";
+    idx = app.inventory.badges.findIndex(it => it.obtainedAt === obtainedAt);
+  }
+
   if (idx === -1) return;
+
+  const inv = app.inventory[type];
   const item = inv[idx];
   app.wallet += item.valuation || 0;
   inv.splice(idx, 1);
+  playSound("sell");
   saveInventory();
 }
 
@@ -408,6 +440,18 @@ function renderInventory() {
         textSpan.classList.add("paint-apply");
         
         nameEl.appendChild(textSpan);
+      } else if (activeTab === "badges" && dataObj) {
+        nameEl.textContent = ""; // Clear any old text
+        const imgUrl = dataObj.images?.find(img => img.url.endsWith("4x.webp"))?.url || dataObj.images?.[0]?.url;
+        if (imgUrl) {
+          const badgeImg = document.createElement("div");
+          badgeImg.className = "badge-item";
+          badgeImg.style.backgroundImage = `url("${imgUrl}")`;
+          badgeImg.title = rawName;
+          nameEl.appendChild(badgeImg);
+        } else {
+          nameEl.textContent = displayName;
+        }
       }
 
       const meta = document.createElement("div");
@@ -964,6 +1008,24 @@ function animateReelTo(winIndex, durationMs = 11000) {
   });
   els.reelTrack._currentAnim = anim;
 
+  // Sound ticking logic
+  let lastTickIndex = -1;
+  const tickLoop = () => {
+    if (anim.playState !== "running") return;
+    const style = window.getComputedStyle(els.reelTrack);
+    const matrix = new WebKitCSSMatrix(style.transform);
+    const currentX = matrix.m41;
+    // Tick exactly when the center pointer enters a new square
+    const currentTickIndex = Math.floor(Math.abs(currentX) / step);
+    
+    if (currentTickIndex !== lastTickIndex) {
+      playSound("tick");
+      lastTickIndex = currentTickIndex;
+    }
+    requestAnimationFrame(tickLoop);
+  };
+  requestAnimationFrame(tickLoop);
+
   return new Promise((resolve) => {
     anim.onfinish = () => {
       els.reelTrack.style.transform = `translate3d(${D}px, 0px, 0px)`;
@@ -1049,6 +1111,7 @@ async function openCase() {
   }
   
   saveInventory();
+  playSound(`win_${winRarity}`);
   showItemModal(invItem);
 
   els.openBtn.disabled = false;
@@ -1134,11 +1197,55 @@ els.usernameToggle.addEventListener("change", (e) => {
 els.rarityFilter.addEventListener("change", () => renderInventory());
 els.sortOrder.addEventListener("change", () => renderInventory());
 
+function sellAllVisible() {
+  const activeTab = app.selectedInventoryTab;
+  const inv = app.inventory[activeTab] || [];
+  const q = (els.invFilter?.value ?? "").trim().toLowerCase();
+  const rarityFilter = els.rarityFilter?.value ?? "all";
+  
+  // Get currently visible items based on filters
+  const toSell = inv.filter((it) => {
+    if (rarityFilter !== "all" && it.rarity !== rarityFilter) return false;
+    const rawName = String((activeTab === "badges" ? it.badgeName : it.paintName) ?? "").toLowerCase();
+    const displayName = getDisplayName(rawName, activeTab === "badges").toLowerCase();
+    if (!q) return true;
+    const rarityStr = String(it.rarity ?? "").toLowerCase();
+    const fl = String(it.floatName ?? "").toLowerCase();
+    return displayName.includes(q) || rarityStr.includes(q) || fl.includes(q);
+  });
+
+  if (toSell.length === 0) return;
+  
+  const totalGain = toSell.reduce((s, i) => s + (i.valuation || 0), 0);
+  if (!confirm(`Sell all ${toSell.length} visible items for $${totalGain.toFixed(2)}?`)) return;
+
+  // Update wallet and inventory
+  app.wallet += totalGain;
+  app.inventory[activeTab] = inv.filter(item => !toSell.includes(item));
+
+  playSound("sell");
+  saveInventory();
+}
+
+els.sellAllBtn.addEventListener("click", sellAllVisible);
+
 // Need to track current modal item for sell button
 const originalShowItemModal = showItemModal;
 showItemModal = (invItem) => {
   app._currentModalItemObtainedAt = invItem.obtainedAt;
+  app._currentModalItemType = !!invItem.badgeId ? "badges" : "paints";
   originalShowItemModal(invItem);
+};
+
+els.modalSellBtn.onclick = () => {
+  const type = app._currentModalItemType || app.selectedInventoryTab;
+  const inv = app.inventory[type];
+  const modalItem = inv?.find(it => it.obtainedAt === app._currentModalItemObtainedAt);
+  if (modalItem) {
+    sellItem(modalItem.obtainedAt);
+    els.winModal.classList.remove("show");
+    els.winModal.setAttribute("aria-hidden", "true");
+  }
 };
 
 load();

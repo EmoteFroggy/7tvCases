@@ -331,7 +331,6 @@ input:not([type]):focus {
   display: flex;
   justify-content: center;
   gap: 12px;
-  margin-bottom: 40px;
 }
 
 .cta {
@@ -374,6 +373,7 @@ input:not([type]):focus {
   position: relative;
   overflow: hidden;
   border-radius: var(--radius-md);
+  margin-bottom: 40px;
 }
 
 .reelViewport {
@@ -646,6 +646,17 @@ input:not([type]):focus {
 
 .btn:hover {
   border-color: var(--text-muted);
+}
+
+.btn-danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
 }
 
 /* 7TV Paint Application */

@@ -26,7 +26,6 @@
               <span>APPLY</span>
             </label>
           </div>
-          
         </div>
       </header>
 
@@ -64,16 +63,16 @@
         </div>
 
         <div class="openStage" id="openView" style="display: none">
-          <div class="ctaRow">
-            <button class="cta" id="openBtn" type="button" disabled>Unlock Case ($5.00)</button>
-            <button class="ctaSecondary" id="backBtn" type="button">Back</button>
-          </div>
-
           <div class="reelShell" id="reelShell" style="display: none">
             <div class="reelViewport">
               <div class="pointer" aria-hidden="true"></div>
               <div class="reelTrack" id="reelTrack"></div>
             </div>
+          </div>
+
+          <div class="ctaRow">
+            <button class="cta" id="openBtn" type="button" disabled>Unlock Case ($5.00)</button>
+            <button class="ctaSecondary" id="backBtn" type="button">Back</button>
           </div>
         </div>
       </section>
@@ -106,6 +105,7 @@
             <div class="search-wrap">
               <input id="invFilter" autocomplete="off" placeholder="Search…" />
             </div>
+            <button id="sellAllBtn" class="btn btn-danger">Sell All</button>
             <div class="pill">
               Items: <strong id="invCount">0</strong>
             </div>
