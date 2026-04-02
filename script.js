@@ -69,10 +69,10 @@ function loadCachedCosmetics() {
 /** @typedef {{ id?: string, name?: string, data?: any }} Paint */
 
 const RARITY_WEIGHTS = /** @type {const} */ ({
-  blue: 80,
+  blue: 79,
   purple: 15,
-  pink: 3.5,
-  red: 1,
+  pink: 4,
+  red: 1.5,
   gold: 0.5,
 });
 
@@ -108,13 +108,10 @@ function getStateFromFloat(f) {
 }
 
 const app = {
-  paints: /** @type {Paint[]} */ ([]),
-  badges: /** @type {any[]} */ ([]),
-  inventory: {
-    paints: /** @type {any[]} */ ([]),
-    badges: /** @type {any[]} */ ([]),
-  },
-  wallet: 500.0,
+  paints: [],
+  badges: [],
+  inventory: { paints: [], badges: [] },
+  wallet: 500.0, // Starting Balance
   selectedCase: "paints",
   selectedInventoryTab: "paints",
   rolling: false,
@@ -124,11 +121,11 @@ const app = {
 };
 
 const RARITY_BASE_PRICE = {
-  blue: 0.25,
-  purple: 1.25,
-  pink: 6,
-  red: 30,
-  gold: 150,
+  blue: 1.25,    // -$3.75 loss
+  purple: 6.50,  // +$1.50 profit
+  pink: 25.00,   // +$20.00 profit
+  red: 120.00,   // +$115.00 profit
+  gold: 650.00   // +$645.00 profit
 };
 
 function calculatePrice(rarity, floatValue, layersCount = 0, shadowsCount = 0, shadowColorsCount = 0) {

@@ -433,7 +433,7 @@ input:not([type]):focus {
 }
 
 .slotName {
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 800;
   text-align: center;
   overflow-wrap: anywhere;
