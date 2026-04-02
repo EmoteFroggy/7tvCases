@@ -29,15 +29,15 @@ const els = {
 function loadCachedCosmetics() {
   try {
     renderInventory();
-    startCaseTitleCycling();
     const raw = localStorage.getItem("stv_cosmetics_cache_v1");
     if (!raw) return false;
     const data = JSON.parse(raw);
     if (!data.paints || !data.badges) return false;
-    
+
     app.paints = data.paints;
     app.badges = data.badges;
-    
+
+    startCaseTitleCycling();
     setPill(`${app.paints.length} paints, ${app.badges.length} badges (cached)`, "ok");
     els.openBtn.disabled = false;
     return true;
@@ -336,9 +336,7 @@ function renderInventory() {
 
   const list = inv
     .filter((it) => {
-
       if (rarityFilter !== "all" && it.rarity !== rarityFilter) return false;
-
       const rawName = String((activeTab === "badges" ? it.badgeName : it.paintName) ?? "").toLowerCase();
       const displayName = getDisplayName(rawName, activeTab === "badges").toLowerCase();
       if (!q) return true;
@@ -347,19 +345,13 @@ function renderInventory() {
       return displayName.includes(q) || rarityStr.includes(q) || fl.includes(q);
     })
     .sort((a, b) => {
-      // Sort Order
       switch (sortOrder) {
-        case "oldest":
-          return a.obtainedAt - b.obtainedAt;
-        case "value-high":
-          return (b.valuation || 0) - (a.valuation || 0);
-        case "value-low":
-          return (a.valuation || 0) - (b.valuation || 0);
-        case "rarity-high":
-          return (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
+        case "oldest": return a.obtainedAt - b.obtainedAt;
+        case "value-high": return (b.valuation || 0) - (a.valuation || 0);
+        case "value-low": return (a.valuation || 0) - (b.valuation || 0);
+        case "rarity-high": return (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
         case "newest":
-        default:
-          return b.obtainedAt - a.obtainedAt;
+        default: return b.obtainedAt - a.obtainedAt;
       }
     });
 
@@ -372,8 +364,7 @@ function renderInventory() {
   });
 
   if (!count) {
-    els.invList.innerHTML =
-      `<div class="invItem"><div class="muted">No items match your filters in ${activeTab}.</div><div class="invMeta"><div class="small">Empty</div></div></div>`;
+    els.invList.innerHTML = `<div class="invItem"><div class="muted">No items match your filters.</div></div>`;
     return;
   }
 
@@ -401,59 +392,37 @@ function renderInventory() {
       const nameEl = document.createElement("div");
       nameEl.className = "invName"; 
       const dataObj = itemsById.get(activeTab === "badges" ? item.badgeId : item.paintId);
-      const rawName = (activeTab === "badges" ? item.badgeName : item.paintName) ?? dataObj?.name ?? "(Unknown Item)";
+      const rawName = (activeTab === "badges" ? item.badgeName : item.paintName) ?? dataObj?.name ?? "(Unknown)";
       const displayName = getDisplayName(rawName, activeTab === "badges");
       
-      if (activeTab === "badges") {
-        nameEl.textContent = "";
-        wrap.title = rawName;
-      } else {
-        nameEl.textContent = displayName;
-      }
-      
+      nameEl.textContent = activeTab === "badges" ? "" : displayName;
+
       if (activeTab === "paints" && dataObj) {
+        nameEl.textContent = ""; // Clear any old text
+        const textSpan = document.createElement("span");
+        textSpan.textContent = displayName;
+        
+        // Apply the 7TV style to the SPAN, not the DIV
         const style = paintToStyle(dataObj);
-        nameEl.style.cssText = ""; 
-        Object.assign(nameEl.style, style);
-        nameEl.classList.add("paint-apply");
-      } else if (activeTab === "badges" && dataObj) {
-        const imgUrl = dataObj.images?.find(img => img.url.endsWith("4x.webp"))?.url || dataObj.images?.[0]?.url;
-        if (imgUrl) {
-          nameEl.classList.add("badge-item");
-          nameEl.style.backgroundImage = `url("${imgUrl}")`;
-        } else {
-          nameEl.style.color = rarityVar(item.rarity);
-        }
-      } else {
-        nameEl.style.color = rarityVar(item.rarity);
-        nameEl.classList.add("fallback");
+        Object.assign(textSpan.style, style);
+        textSpan.classList.add("paint-apply");
+        
+        nameEl.appendChild(textSpan);
       }
 
       const meta = document.createElement("div");
       meta.className = "invMeta";
-
-      const rarity = document.createElement("div");
-      rarity.className = "small";
-      rarity.textContent = String(item.rarity ?? "blue").toUpperCase();
-      rarity.style.color = rarityVar(item.rarity);
-
-      const val = document.createElement("div");
-      val.className = "small";
-      val.style.color = "var(--success)";
-      val.textContent = `$${(item.valuation || 0).toFixed(2)}`;
+      meta.innerHTML = `
+        <div class="small" style="color:${rarityVar(item.rarity)}">${String(item.rarity).toUpperCase()}</div>
+        <div class="small" style="color:var(--success)">$${(item.valuation || 0).toFixed(2)}</div>
+      `;
 
       const sellBtn = document.createElement("button");
       sellBtn.className = "btn";
       sellBtn.textContent = "SELL";
-      sellBtn.onclick = (e) => {
-        e.stopPropagation();
-        sellItem(item.obtainedAt);
-      };
+      sellBtn.onclick = (e) => { e.stopPropagation(); sellItem(item.obtainedAt); };
 
-      meta.appendChild(rarity);
-      meta.appendChild(val);
       meta.appendChild(sellBtn);
-
       wrap.appendChild(nameEl);
       wrap.appendChild(meta);
       frag.appendChild(wrap);
@@ -466,15 +435,11 @@ function renderInventory() {
   els.invList.innerHTML = "";
   renderMore();
 
-  const onScroll = () => {
-    if (token !== renderInventory._token) return;
-    if (rendered >= list.length) return;
+  els.invList.onscroll = () => {
+    if (token !== renderInventory._token || rendered >= list.length) return;
     const { scrollTop, clientHeight, scrollHeight } = els.invList; 
-    if (scrollTop + clientHeight >= scrollHeight - 200) {
-      renderMore();
-    }
+    if (scrollTop + clientHeight >= scrollHeight - 200) renderMore();
   };
-  els.invList.onscroll = onScroll;
 }
 
 function setPill(text, tone = "muted") {
@@ -609,19 +574,25 @@ function paintToStyle(paint) {
   if (!data) return {};
 
   const rawLayers = Array.isArray(data.layers) ? data.layers : [];
-  const layers = rawLayers
+  const layerEffects = rawLayers
     .map((layer) => {
       if (!layer) return null;
       const ty = layer.ty ?? layer;
-      const base = { opacity: typeof layer.opacity === "number" ? layer.opacity : 1 };
-      return { ...base, ty };
-    })
-    .filter(Boolean);
-
-  const layerEffects = layers
-    .map((layer) => {
-      const ty = layer.ty;
+      const opacity = typeof layer.opacity === "number" ? layer.opacity : 1;
       const tn = String(ty?.__typename ?? "").toLowerCase();
+
+      // Helper to apply opacity to hex color
+      const applyOpacity = (hex) => {
+        if (!hex) return "transparent";
+        if (opacity >= 1) return hex;
+        // Hex to RGBA
+        let h = hex.replace("#", "");
+        if (h.length === 3) h = h.split("").map(c => c + c).join("");
+        const r = parseInt(h.substring(0, 2), 16);
+        const g = parseInt(h.substring(2, 4), 16);
+        const b = parseInt(h.substring(4, 6), 16);
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+      };
 
       if (tn === "paintlayertypelineargradient") {
         const sortedStops = [...(ty.stops ?? [])].sort(
@@ -629,10 +600,9 @@ function paintToStyle(paint) {
         );
         if (!sortedStops.length) return null;
         const stopsCss = sortedStops
-          .map((st) => `${st.color?.hex ?? "#ffffff"} ${Math.round(clamp01(st.at ?? 0) * 10000) / 100}%`)
+          .map((st) => `${applyOpacity(st.color?.hex ?? "#ffffff")} ${Math.round(clamp01(st.at ?? 0) * 10000) / 100}%`)
           .join(", ");
-        const img = `${ty.repeating ? "repeating-" : ""}linear-gradient(${ty.angle ?? 0}deg, ${stopsCss})`;
-        return { opacity: layer.opacity, image: img };
+        return `${ty.repeating ? "repeating-" : ""}linear-gradient(${ty.angle ?? 0}deg, ${stopsCss})`;
       }
 
       if (tn === "paintlayertyperadialgradient") {
@@ -642,10 +612,9 @@ function paintToStyle(paint) {
         if (!sortedStops.length) return null;
         const shape = ty.shape === "CIRCLE" ? "circle" : "ellipse";
         const stopsCss = sortedStops
-          .map((st) => `${st.color?.hex ?? "#ffffff"} ${Math.round(clamp01(st.at ?? 0) * 10000) / 100}%`)
+          .map((st) => `${applyOpacity(st.color?.hex ?? "#ffffff")} ${Math.round(clamp01(st.at ?? 0) * 10000) / 100}%`)
           .join(", ");
-        const img = `${ty.repeating ? "repeating-" : ""}radial-gradient(${shape}, ${stopsCss})`;
-        return { opacity: layer.opacity, image: img };
+        return `${ty.repeating ? "repeating-" : ""}radial-gradient(${shape}, ${stopsCss})`;
       }
 
       if (tn === "paintlayertypeimage") {
@@ -657,30 +626,27 @@ function paintToStyle(paint) {
           images.find((im) => im.scale === 1 && (!animated || im.frameCount > 1)) ??
           images[0];
         if (!best?.url) return null;
-        return { opacity: layer.opacity, image: `url("${best.url}")` };
+        return `url("${best.url}")`;
       }
 
       if (tn === "paintlayertypesinglecolor") {
         const col = ty.color?.hex;
         if (!col) return null;
-        return { opacity: layer.opacity, color: col };
+        const finalCol = applyOpacity(col);
+        return `linear-gradient(${finalCol}, ${finalCol})`;
       }
 
       return null;
     })
     .filter(Boolean);
 
-  const bgImages = layerEffects.flatMap((l) => (l.image ? [l.image] : []));
-  const solidColors = layerEffects.flatMap((l) => (l.color ? [l.color] : []));
-
-  const backgrounds = [...solidColors, ...bgImages];
   const style = {};
 
-  if (backgrounds.length) {
-    style.backgroundImage = backgrounds.join(", ");
-    style.backgroundSize = backgrounds.map(() => "cover").join(", ");
-    style.backgroundPosition = backgrounds.map(() => "center").join(", ");
-    style.backgroundRepeat = backgrounds.map(() => "no-repeat").join(", ");
+  if (layerEffects.length) {
+    style.backgroundImage = layerEffects.join(", ");
+    style.backgroundSize = layerEffects.map(() => "cover").join(", ");
+    style.backgroundPosition = layerEffects.map(() => "center").join(", ");
+    style.backgroundRepeat = layerEffects.map(() => "no-repeat").join(", ");
   }
 
   const shadows = Array.isArray(data.shadows) ? data.shadows : [];
@@ -693,11 +659,6 @@ function paintToStyle(paint) {
     })),
   );
   if (filter) style.filter = filter;
-
-  const opacities = layerEffects.map((l) => l.opacity).filter((v) => typeof v === "number" && v < 1);
-  if (opacities.length) {
-    style.opacity = Math.min(...opacities);
-  }
 
   return style;
 }
@@ -726,31 +687,34 @@ async function gql(query, variables) {
   return json?.data;
 }
 
+function updateCaseTitles() {
+  if (app.paints.length > 0 && els.paintCaseTitle) {
+    const paint = app.paints[Math.floor(cryptoRand() * app.paints.length)];
+    els.paintCaseTitle.textContent = paint.name || "Unnamed Paint";
+    const style = paintToStyle(paint);
+    els.paintCaseTitle.style.cssText = "";
+    Object.assign(els.paintCaseTitle.style, style);
+    els.paintCaseTitle.classList.add("paint-apply");
+  }
+  if (app.badges.length > 0 && els.badgeCaseTitle) {
+    const badge = app.badges[Math.floor(cryptoRand() * app.badges.length)];
+    const imgUrl = badge.images?.find(img => img.url.endsWith("4x.webp"))?.url || badge.images?.[0]?.url;
+    if (imgUrl) {
+      els.badgeCaseTitle.textContent = "";
+      els.badgeCaseTitle.style.backgroundImage = `url("${imgUrl}")`;
+      els.badgeCaseTitle.title = badge.name;
+      els.badgeCaseTitle.classList.add("badge-item");
+    } else {
+      els.badgeCaseTitle.textContent = badge.name || "Unnamed Badge";
+      els.badgeCaseTitle.style.backgroundImage = "none";
+      els.badgeCaseTitle.classList.remove("badge-item");
+    }
+  }
+}
+
 function startCaseTitleCycling() {
-  setInterval(() => {
-    if (app.paints.length > 0 && els.paintCaseTitle) {
-      const paint = app.paints[Math.floor(cryptoRand() * app.paints.length)];
-      els.paintCaseTitle.textContent = paint.name || "Unnamed Paint";
-      const style = paintToStyle(paint);
-      els.paintCaseTitle.style.cssText = "";
-      Object.assign(els.paintCaseTitle.style, style);
-      els.paintCaseTitle.classList.add("paint-apply");
-    }
-    if (app.badges.length > 0 && els.badgeCaseTitle) {
-      const badge = app.badges[Math.floor(cryptoRand() * app.badges.length)];
-      const imgUrl = badge.images?.find(img => img.url.endsWith("4x.webp"))?.url || badge.images?.[0]?.url;
-      if (imgUrl) {
-        els.badgeCaseTitle.textContent = "";
-        els.badgeCaseTitle.style.backgroundImage = `url("${imgUrl}")`;
-        els.badgeCaseTitle.title = badge.name;
-        els.badgeCaseTitle.classList.add("badge-item");
-      } else {
-        els.badgeCaseTitle.textContent = badge.name || "Unnamed Badge";
-        els.badgeCaseTitle.style.backgroundImage = "none";
-        els.badgeCaseTitle.classList.remove("badge-item");
-      }
-    }
-  }, 3000);
+  updateCaseTitles();
+  setInterval(updateCaseTitles, 3000);
 }
 
 function saveCosmeticsToCache() {

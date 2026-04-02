@@ -95,35 +95,61 @@ header {
   display: flex;
   background: var(--surface-low);
   border: 1px solid var(--border);
-  padding: 4px;
   border-radius: var(--radius-sm);
-  align-items: center;
-  gap: 8px;
+  align-items: stretch;
+  overflow: hidden;
+  transition: all 0.2s ease;
 }
 
-.input-group input {
-  border: none;
-  background: transparent;
-  padding: 4px 8px;
+.input-group:focus-within {
+  border-color: var(--border-strong);
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+
+.input-group input#usernameInput {
+  border: none !important;
+  background: transparent !important;
+  padding: 10px 14px;
+  font-weight: 800;
+  width: 160px;
+  color: var(--text);
+  font-size: 12px;
+  outline: none !important;
+  letter-spacing: 0.05em;
+}
+
+.input-group input#usernameInput::placeholder {
+  color: var(--text-dim);
   font-weight: 700;
-  width: 120px;
 }
 
 .toggle-label {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 10px;
-  font-weight: 800;
-  color: var(--text-dim);
+  font-weight: 900;
+  color: var(--text-muted);
   cursor: pointer;
-  padding-right: 8px;
+  padding: 0 14px;
   border-left: 1px solid var(--border);
-  padding-left: 12px;
+  background: var(--surface-high);
+  transition: all 0.2s;
+  user-select: none;
+  text-transform: uppercase;
+}
+
+.toggle-label:hover {
+  background: var(--border-strong);
+  color: var(--text);
 }
 
 .toggle-label input {
   cursor: pointer;
+  accent-color: var(--success);
+  width: 14px;
+  height: 14px;
 }
 
 .invHeaderTitle {
@@ -139,38 +165,9 @@ header {
   flex-wrap: wrap;
 }
 
-.search-wrap {
-  background: var(--surface-low);
-  border: 1px solid var(--border);
-  padding: 4px 8px;
-  display: flex;
-  align-items: center;
-  border-radius: var(--radius-sm);
-}
-
-.search-wrap input {
-  background: transparent;
-  border: none;
-  color: var(--text);
-  font-size: 12px;
-  outline: none;
-  width: 150px;
-}
-
-.caseInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.toolbar {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-}
-
 /* Input Styles */
-input[type="text"] {
+input[type="text"], 
+input:not([type]) {
   background: var(--surface-low);
   border: 1px solid var(--border);
   color: var(--text);
@@ -178,11 +175,39 @@ input[type="text"] {
   font-size: 12px;
   border-radius: var(--radius-sm);
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
+  font-family: inherit;
 }
 
-input[type="text"]:focus {
+input[type="text"]:focus,
+input:not([type]):focus {
   border-color: var(--border-strong);
+  background: var(--surface);
+}
+
+.search-wrap {
+  background: var(--surface-low);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+  overflow: hidden;
+}
+
+.search-wrap:focus-within {
+  border-color: var(--border-strong);
+  background: var(--surface);
+}
+
+.search-wrap input {
+  background: transparent !important;
+  border: none !important;
+  color: var(--text);
+  font-size: 12px;
+  outline: none !important;
+  width: 150px;
+  padding: 8px 12px;
 }
 
 .wallet {
@@ -214,6 +239,20 @@ input[type="text"]:focus {
 }
 
 .caseHeaderText {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  position: relative;
+  bottom: -51px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.caseInventoryText {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -258,6 +297,8 @@ input[type="text"]:focus {
   margin-bottom: 8px;
   line-height: 1.1;
   letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .caseDesc {
@@ -395,6 +436,7 @@ input[type="text"]:focus {
   font-size: 20px;
   font-weight: 800;
   text-align: center;
+  overflow-wrap: anywhere;
   word-break: break-word;
   line-height: 1.1;
 }
@@ -481,6 +523,8 @@ input[type="text"]:focus {
   font-size: 16px;
   font-weight: 800;
   line-height: 1.2;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .invMeta {
@@ -532,6 +576,8 @@ input[type="text"]:focus {
   line-height: 1;
   margin-bottom: 24px;
   text-align: center;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .kv {
@@ -565,6 +611,8 @@ input[type="text"]:focus {
 .kvItem .v {
   font-size: 14px;
   font-weight: 600;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .modalActions {
