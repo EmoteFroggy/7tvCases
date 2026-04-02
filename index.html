@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>7TV LOOT BOXES</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="title">
+          <h1>7TV LOOT BOXES</h1>
+          <div class="pill" id="pill">
+            <span id="pillText">Connecting…</span>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div class="input-group">
+            <input type="text" id="usernameInput" placeholder="USERNAME" />
+            <label class="toggle-label">
+              <input type="checkbox" id="usernameToggle" />
+              <span>APPLY</span>
+            </label>
+          </div>
+          <div class="wallet">
+            <span class="pill">Balance</span>
+            <strong id="balanceText">$0.00</strong>
+          </div>
+        </div>
+      </header>
+
+      <section class="caseShell" aria-label="Case opening">
+        <div class="caseHeader">
+          <div class="caseHeaderText">CHOOSE A CASE</div>
+        </div>
+
+        <div class="caseBody" id="chooseView">
+          <div class="caseGrid">
+            <div class="caseCard" data-case="paints">
+              <div class="caseInfo">
+                <div class="caseTitle" id="paintCaseTitle">PAINTS</div>
+                <div class="caseDesc">All paints available with rarity</div>
+              </div>
+              <div class="caseActions">
+                <div class="price">$5.00</div>
+              </div>
+            </div>
+            <div class="caseCard" data-case="badges">
+              <div class="caseInfo">
+                <div class="caseTitle" id="badgeCaseTitle">BADGES</div>
+                <div class="caseDesc">All badges available with rarity</div>
+              </div>
+              <div class="caseActions">
+                <div class="price">$5.00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="openStage" id="openView" style="display: none">
+          <div class="ctaRow">
+            <button class="cta" id="openBtn" type="button" disabled>Unlock Case ($5.00)</button>
+            <button class="ctaSecondary" id="backBtn" type="button">Back</button>
+          </div>
+
+          <div class="reelShell" id="reelShell" style="display: none">
+            <div class="reelViewport">
+              <div class="pointer" aria-hidden="true"></div>
+              <div class="reelTrack" id="reelTrack"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="invShell" id="inventorySection">
+        <div class="invHead">
+          <div class="invHeaderTitle">
+            <div class="caseHeaderText">Inventory</div>
+            <div class="invTabs">
+              <div class="invTab active" data-tab="paints">Paints</div>
+              <div class="invTab" data-tab="badges">Badges</div>
+            </div>
+          </div>
+          <div class="invControls">
+            <select id="rarityFilter" class="sortSelect">
+              <option value="all">All Rarities</option>
+              <option value="blue">Blue</option>
+              <option value="purple">Purple</option>
+              <option value="pink">Pink</option>
+              <option value="red">Red</option>
+              <option value="gold">Gold</option>
+            </select>
+            <select id="sortOrder" class="sortSelect">
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="value-high">Value: High to Low</option>
+              <option value="value-low">Value: Low to High</option>
+              <option value="rarity-high">Rarity: High to Low</option>
+            </select>
+            <div class="search-wrap">
+              <input id="invFilter" autocomplete="off" placeholder="Search…" />
+            </div>
+            <div class="pill">
+              Items: <strong id="invCount">0</strong>
+            </div>
+          </div>
+        </div>
+        <div class="invList" id="invList"></div>
+      </div>
+    </div>
+
+    <div class="modal" id="winModal" aria-hidden="true">
+      <div class="modalCard" role="dialog" aria-modal="true" aria-label="Unboxed item">
+        <div class="modalTop">
+          <div class="modalPaintName fallback" id="modalPaintName">—</div>
+        </div>
+        <div class="modalBody">
+          <div class="kv" id="modalKv"></div>
+        </div>
+        <div class="modalActions">
+          <button class="confirmBtn" id="modalConfirmBtn" type="button">CONFIRM</button>
+          <button class="btn" id="modalSellBtn" type="button" style="border-color: var(--danger); color: var(--danger); padding: 16px;">SELL</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
