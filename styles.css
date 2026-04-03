@@ -327,6 +327,16 @@ input:not([type]):focus {
   padding: 40px 24px;
 }
 
+.auto-toggle {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 16px;
+}
+
+.auto-toggle input:checked + span {
+  color: var(--success);
+}
+
 .ctaRow {
   display: flex;
   justify-content: center;

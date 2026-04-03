@@ -25,6 +25,7 @@ const els = {
   sortOrder: document.getElementById("sortOrder"),
   paintCaseTitle: document.getElementById("paintCaseTitle"),
   badgeCaseTitle: document.getElementById("badgeCaseTitle"),
+  autospinToggle: document.getElementById("autospinToggle"),
 };
 
 const sounds = {
@@ -115,6 +116,7 @@ const app = {
   selectedCase: "paints",
   selectedInventoryTab: "paints",
   rolling: false,
+  autospin: false,
   username: "",
   customNameToggle: false,
   muted: localStorage.getItem("stv_case_muted_v1") === "true",
@@ -975,7 +977,7 @@ function animateReelTo(winIndex, durationMs = 11000) {
 
   const delay = 500;   
   const t1 = 100;     
-  const t2 = 1000;     
+  const t2 = 500;     
   const t3 = 8000;     
   
   const total = delay + t1 + t2 + t3;
@@ -1113,6 +1115,16 @@ async function openCase() {
 
   els.openBtn.disabled = false;
   app.rolling = false;
+
+  if (app.autospin && app.wallet >= 5.0) {
+    app._autospinTimeout = setTimeout(() => {
+      if (app.autospin && !app.rolling && els.openView.style.display !== "none") {
+        els.winModal.classList.remove("show");
+        els.winModal.setAttribute("aria-hidden", "true");
+        openCase();
+      }
+    }, 1500);
+  }
 }
 
 window.addEventListener("resize", () => {
@@ -1122,6 +1134,15 @@ window.addEventListener("resize", () => {
 });
 
 els.openBtn.addEventListener("click", openCase);
+els.autospinToggle.addEventListener("change", (e) => {
+  app.autospin = e.target.checked;
+  if (app.autospin && !app.rolling && els.openView.style.display !== "none") {
+    openCase();
+  } else if (!app.autospin) {
+    clearTimeout(app._autospinTimeout);
+  }
+});
+
 els.invFilter?.addEventListener("input", () => renderInventory());
 els.modalConfirmBtn.addEventListener("click", () => {
   els.winModal.classList.remove("show");
@@ -1142,7 +1163,11 @@ document.addEventListener("keydown", (e) => {
 
 els.backBtn.addEventListener("click", () => {
   if (app.rolling) return;
+  app.autospin = false;
+  if (els.autospinToggle) els.autospinToggle.checked = false;
+  clearTimeout(app._autospinTimeout);
   switchView("choose");
+  document.querySelector(".caseHeaderText").textContent = "CHOOSE A CASE";
 });
 
 document.querySelectorAll(".caseCard").forEach((card) => {
@@ -1159,11 +1184,6 @@ document.querySelectorAll(".caseCard").forEach((card) => {
       switchView("open");
     });
   });
-
-  els.backBtn.onclick = () => {
-    switchView("choose");
-    document.querySelector(".caseHeaderText").textContent = "CHOOSE A CASE";
-  };
 
 document.querySelectorAll(".invTab").forEach((tab) => {
   tab.addEventListener("click", () => {
@@ -1214,7 +1234,7 @@ function sellAllVisible() {
   if (toSell.length === 0) return;
   
   const totalGain = toSell.reduce((s, i) => s + (i.valuation || 0), 0);
-  if (!confirm(`Sell all ${toSell.length} visible items for $${totalGain.toFixed(2)}?`)) return;
+  if (!confirm(`Sell all ${toSell.length} items for $${totalGain.toFixed(2)}?`)) return;
 
   // Update wallet and inventory
   app.wallet += totalGain;
